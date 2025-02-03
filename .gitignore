@@ -1,0 +1,4 @@
+// don't add .vscode to git
+.vscode
+
+output.txt
