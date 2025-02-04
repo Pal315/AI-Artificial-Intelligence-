@@ -97,6 +97,9 @@ void solve_maze_ui() {
     Node<pair<int, int>>* res;
     int lastMousePosX = 0;
     int lastMousePosY = 0;
+    int click = 0;
+    Cell* source = NULL;
+    Cell* destination = NULL;
 
     while (!WindowShouldClose())    // Detect window close button or ESC key
     {
@@ -109,27 +112,49 @@ void solve_maze_ui() {
             Vector2 pos = GetMousePosition();
             int indexJ = pos.x/cellWidth;
             int indexI = pos.y/cellHeight;
-            if((lastMousePosX != indexI || lastMousePosY != indexJ) && (indexI >= 0 && indexI < rows && indexJ >= 0 && indexJ < cols)) {
-                lastMousePosX = indexI;
-                lastMousePosY = indexJ;
-                grid[indexI][indexJ]->isBlocked = !grid[indexI][indexJ]->isBlocked;
-                result = false;
+            if(click < 2) {
+                if(indexI >= 0 && indexI < rows && indexJ >= 0 && indexJ < cols) {
+                    if(click == 0) {
+                        source = grid[indexI][indexJ];
+                        click++;
+                    }  else {
+                        if(source != grid[indexI][indexJ]) {
+                            destination = grid[indexI][indexJ];
+                            click++;
+                        }
+                    }
+                }
+            } else {
+                if((lastMousePosX != indexI || lastMousePosY != indexJ) && (indexI >= 0 && indexI < rows && indexJ >= 0 && indexJ < cols)) {
+                    lastMousePosX = indexI;
+                    lastMousePosY = indexJ;
+                    if(grid[indexI][indexJ] != destination && grid[indexI][indexJ] != source) {
+                        grid[indexI][indexJ]->isBlocked = !grid[indexI][indexJ]->isBlocked;
+                        result = false;
+                    }
+                }
             }
         } else {
             lastMousePosX = mousePosX;
             lastMousePosY = mousePosY;
         }
+
         if(IsKeyPressed(KEY_ENTER)) {
-            if(!result) {
+            // cout << "hello" << endl;
+            if(!result && source != NULL && destination != NULL) {
+                // cout << click << endl;
                 maze* maze_class = new maze();
                 vector<vector<int>> board(rows, vector<int>(cols, 0));
+                // cout << "hey" << endl;
                 for(int i = 0; i < rows; i++) {
                     for(int j = 0; j < cols; j++) {
                         board[i][j] = grid[i][j]->isBlocked ? 0 : 1;
                     }
                 }
+                // cout << source->i << " " << source->j << " " << destination->i << " " << destination->j;
+                // cout << 10 << endl;
                 maze_class->board = board;
-                res = A_star<pair<int, int>>(maze_class, {0, 0}, {rows-1, cols-1});
+                res = A_star<pair<int, int>>(maze_class, {source->j/cellHeight, source->i/cellWidth}, {destination->j/cellHeight, destination->i/cellWidth});
                 // for(int i = 0; i < rows; i++) {
                 //     for(int j = 0; j < cols; j++) {
                 //         cout << maze_class->board[i][j] << " ";
@@ -142,6 +167,13 @@ void solve_maze_ui() {
                 }
                 result = true;
             }
+        }
+
+        if(IsKeyPressed(KEY_C)) {
+            source = NULL;
+            destination = NULL;
+            click = 0;
+            result = false;
         }
 
         //----------------------------------------------------------------------------------
@@ -163,13 +195,20 @@ void solve_maze_ui() {
                 }
             }
 
+            if(source) {
+                DrawRectangle(source->i, source->j, cellWidth, cellHeight, BLUE);
+            }
+            if(destination) {
+                DrawRectangle(destination->i, destination->j, cellWidth, cellHeight, PURPLE);
+            }
+
             // Now draw the path (move this to the end)
             if(result) {
                 Node<pair<int, int>>* temp = res;
                 while (temp != NULL) {
                     DrawRectangle(grid[temp->data.first][temp->data.second]->i, 
                                 grid[temp->data.first][temp->data.second]->j, 
-                                cellWidth, cellHeight, BLUE);
+                                cellWidth, cellHeight, GREEN);
                     temp = temp->parent;
                 }
             }
